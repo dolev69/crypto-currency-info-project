@@ -1,0 +1,98 @@
+@font-face {
+    font-family: "RussoOne-Regular";
+    src: url(assets/font/RussoOne-Regular.ttf);
+}
+
+body {
+    padding: 0;
+    margin: 0;
+    background-image: url(assets/bgCryptoImg.png);
+    background-repeat: no-repeat;
+    background-size: cover;
+    font-family: "RussoOne-Regular";
+}
+
+/* custom edit to bootstrap navbar and more */
+.navbar-bg {
+    background-color: #000000;
+}
+
+.navbar-color {
+    background-color: #f2a900;
+}
+
+.btn-outline {
+    border: #000000 1px solid;
+    color: #000000;
+}
+
+.btn-outline:hover {
+    border: #965d00 1px solid;
+    color: #965d00;
+}
+
+.navbar-brand {
+    cursor: crosshair;
+}
+/* END OF -> custom edit to bootstrap navbar and more */
+
+.welcomeInfo {
+    text-align: center;
+    margin: 30px;
+    background-color: #f2a900;
+    border: #000000 3px solid;
+}
+
+.welcomeInfo h2 {
+    color: rgb(0, 255, 0);
+}
+
+.social-media > a {
+    color: #000000;
+    font-size: 30px;
+}
+
+.container {
+    padding: 30px;
+    margin: auto;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.about {
+    width: 600px;
+    text-align: center;
+    margin: 30px;
+    background-color: #f2a900;
+    border: #000000 3px solid;
+}
+
+.moreInfo {
+    padding-top: 15px;
+}
+
+.modal-container img {
+    position: absolute;
+    right: 5px;
+    top: 15px;
+    height: 100px;
+    width: 100px;
+}
+
+.spinner {
+    margin-left: 5px;
+    display: none;
+    width: 13px;
+    height: 13px;
+    border: 3px solid #000000;
+    border-top: 3px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
