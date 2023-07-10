@@ -15,15 +15,8 @@
 
     spinner.style.display = "inline-block";
 
-    const coins = await getJson("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1");
+    const coins = await getJson("data.json"); // https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1
     printCoins(coins);
-
-
-    // after being in currencies page you can access the More Info button here
-    const moreInfoButtons = document.getElementsByClassName("more-info-button");
-    for (let i = 0; i < moreInfoButtons.length; i++) {
-      moreInfoButtons[i].addEventListener("click", displayMoreInfo);
-    }
 
     spinner.style.display = "none";
   
@@ -73,9 +66,22 @@
 
   // gets the data from the api and returns json of the data
   async function getJson(url) {
-    const respone = await fetch(url)
-    const json = await respone.json();
-    return json;
+
+    try {
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error("response is not okay");
+      }
+
+      const json = await response.json();
+      return json;
+
+    } catch (error) {
+      console.error("Error fetching JSON:", error);
+      throw error;
+    }
+
   }
 
   // prints the coins in cards (card container from bootstrap)
@@ -96,24 +102,39 @@
                     <div class="card-body">
 
                       <h5 class="card-title">${coin.symbol.toUpperCase()}</h5>
+                      
                       <p class="card-text">${coin.name}</p>
 
                         <div class="form-check form-switch">
+
                           <input class="form-check-input" type="checkbox" role="switch" id="${coin.market_cap_rank}">
+
                           <label class="form-check-label" for="flexSwitchCheckDefault"></label>
+
                         </div>
 
                         <br>
 
                           <a href="#" class="btn btn-success more-info-button" data-coin-id="${coin.market_cap_rank}" data-coin-name="${coin.id}">More Info +</a><div class="spinner" id="spinnerId${coin.market_cap_rank}"></div>
+
                         <div class="moreInfo" id="moreInfoContent-${coin.market_cap_rank}"></div>
+
                     </div>
+
                 </div>
+
               </div>
+
               `
     }
 
     mainContent.innerHTML = html;
+
+    // after being in currencies page you can access the More Info button here
+    const moreInfoButtons = document.getElementsByClassName("more-info-button");
+    for (let i = 0; i < moreInfoButtons.length; i++) {
+    moreInfoButtons[i].addEventListener("click", displayMoreInfo);
+    }
 
     displayCoinsInModal(coins);
 
@@ -175,7 +196,7 @@
   }
 
   async function searchCoins(query) {
-    const coins = await getJson("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1");
+    const coins = await getJson("data.json");
 
     const filteredCoins = coins.filter((coin) => {
       return coin.name.toLowerCase().includes(query.toLowerCase()) || coin.symbol.toLowerCase().includes(query.toLowerCase());
