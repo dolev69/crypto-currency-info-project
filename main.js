@@ -15,7 +15,7 @@
 
     spinner.style.display = "inline-block";
 
-    const coins = await getJson("data.json"); // https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1
+    const coins = await getJson("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1");
     printCoins(coins);
 
     spinner.style.display = "none";
@@ -196,7 +196,7 @@
   }
 
   async function searchCoins(query) {
-    const coins = await getJson("data.json");
+    const coins = await getJson("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1");
 
     const filteredCoins = coins.filter((coin) => {
       return coin.name.toLowerCase().includes(query.toLowerCase()) || coin.symbol.toLowerCase().includes(query.toLowerCase());
