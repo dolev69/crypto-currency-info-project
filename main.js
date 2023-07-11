@@ -1,6 +1,6 @@
 "use strict";
 
-(() => {
+$(() => {
 
   const currenciesLink = document.getElementById("currenciesLink");
   const liveReportsLink = document.getElementById("liveReportsLink");
@@ -11,14 +11,30 @@
   currenciesLink.addEventListener("click", displayCurrencies);
   
   async function displayCurrencies() {
-    const spinner = document.getElementById("spinner");
+    const spinner = document.getElementById("spinner"); // loading spinner (modified in css).
 
-    spinner.style.display = "inline-block";
+    spinner.style.display = "inline-block"; // shows the loading spinner.
 
-    const coins = await getJson("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1");
-    printCoins(coins);
+    const storedCoinsData = sessionStorage.getItem("coinsData"); // gets the data from session storage.
+    let coins;
 
-    spinner.style.display = "none";
+    if (storedCoinsData) { // if we already have the data then we just print the coins
+
+      coins = JSON.parse(storedCoinsData);
+      printCoins(coins);
+
+    }
+
+    else {
+
+      coins = await getJson("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1"); // api call
+      printCoins(coins);
+
+      saveToSessionStorage(coins); // saving to session storage - incase of reload window.
+
+    }
+
+    spinner.style.display = "none"; // hides the loading spinner when done.
   
   }
   
@@ -26,7 +42,7 @@
   liveReportsLink.addEventListener("click", displayLiveReports);
   
   function displayLiveReports() {
-    mainContent.innerHTML = `<img src="assets/underConstruction.png">`
+    mainContent.innerHTML = `<img src="assets/underConstruction.png">` // Live Reports page under construction image.
   }
   
   // display the about me page when clicked
@@ -64,6 +80,11 @@
       `
   }
 
+  // saving to session storage to prevent spamming the api
+  function saveToSessionStorage(coins) {
+    sessionStorage.setItem("coinsData" , JSON.stringify(coins));
+  }
+
   // gets the data from the api and returns json of the data
   async function getJson(url) {
 
@@ -71,13 +92,13 @@
       const response = await fetch(url);
 
       if (!response.ok) {
-        throw new Error("response is not okay");
+        throw new Error("response is not okay"); // throws error when response is not okay.
       }
 
       const json = await response.json();
-      return json;
+      return json; // returns the data from the api.
 
-    } catch (error) {
+    } catch (error) { // catches the thrown ERROR and handles with it.
       console.error("Error fetching JSON:", error);
       throw error;
     }
@@ -87,10 +108,10 @@
   // prints the coins in cards (card container from bootstrap)
   function printCoins(coins) {
 
-    const mainContent = document.getElementById("mainContent");
+    const mainContent = document.getElementById("mainContent"); // main content div.
     let html = "";
 
-    for (const coin of coins) {
+    for (const coin of coins) { // looping through every coin from the api.
             html +=
               `
               <div class="cards-container">
@@ -128,30 +149,100 @@
               `
     }
 
+    $(document).on("change", ".form-check-input[type='checkbox']", function () {
+      const checkedCoins = $(".form-check-input[type='checkbox']:checked"); // every checked coin
+
+      if (checkedCoins.length > 5) { // 5 is the limit - if tries to reach more than the limit = showing showLimitReachedModal up.
+
+        $(this).prop("checked", false);
+        showLimitReachedModal(checkedCoins);
+
+      }
+    });
+
     mainContent.innerHTML = html;
 
     // after being in currencies page you can access the More Info button here
-    const moreInfoButtons = document.getElementsByClassName("more-info-button");
-    for (let i = 0; i < moreInfoButtons.length; i++) {
-    moreInfoButtons[i].addEventListener("click", displayMoreInfo);
-    }
+    $(".more-info-button").on("click", displayMoreInfo); // every more info button. when clicked it calls displayMoreInfo
 
-    displayCoinsInModal(coins);
+  }
 
+  // modal popping up after 5 checked coins
+  const limitReachedModal = document.getElementById("limitReachedModal");
+  function showLimitReachedModal(checkedCoins) {
+
+    checkedCoins.each(function () {
+
+      let element = $(this);
+      let coin = {};
+
+      coin.image = element.find("img").attr("src");
+      coin.symbol = element.find("h5").text();
+      coin.name = element.find("p.card-text").text();
+
+      const html =
+      `
+      <div class="modal-container">
+
+        <div class="cards-container">
+
+          <div class="card">
+
+            <img src="${coin.image}">
+
+              <div class="card-body">
+
+                <h5 class="card-title">${coin.symbol.toUpperCase()}</h5>
+
+                <p class="card-text">${coin.name}</p>
+
+                  <div class="form-check form-switch">
+
+                    <input class="form-check-input" type="checkbox" role="switch" checked>
+                    <label class="form-check-label" for="flexSwitchCheckDefault"></label>
+
+                  </div>
+
+              </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <br>
+      `
+
+      const limitReachedModalBody = limitReachedModal.querySelector(".modal-body");
+      limitReachedModalBody.innerHTML = html; // GET http://127.0.0.1:5500/undefined 404 (Not Found)
+
+    })
+
+    $(limitReachedModal).modal("show"); // not shows all the 5 checked
+      
+    // CLOSE BTN in the modal
+    const limitReachedModalCloseBtn = limitReachedModal.querySelector(".btn-secondary");
+
+      limitReachedModalCloseBtn.addEventListener("click", function () {
+
+        $(limitReachedModal).modal("hide"); // when clicking close - hides the modal.
+
+      });   
   }
   
   // when pressing the More Info button it adds the data (collapse + -)
   async function displayMoreInfo() {
 
-    event.preventDefault();
+    event.preventDefault(); // prevents scrolling up after button click.
 
     const button = this;
     const coinId = button.getAttribute("data-coin-id");
     const coinName = button.getAttribute("data-coin-name");
             
 
-    const spinner = document.getElementById(`spinnerId${coinId}`);
-    spinner.style.display = "inline-block";
+    const spinner = document.getElementById(`spinnerId${coinId}`); // loading spinner
+    spinner.style.display = "inline-block"; // shows the loading spinner
 
     // coin takes the specific coin that the user pressed more info on
     const coin = await getJson(`https://api.coingecko.com/api/v3/coins/${coinName}`);
@@ -179,7 +270,7 @@
 
     }
 
-    spinner.style.display = "none";
+    spinner.style.display = "none"; // hides the loading spinner when done.
 
   };
 
@@ -189,96 +280,21 @@
 
   function search() {
     const searchInput = document.getElementById("searchInput");
-    const query = searchInput.value;
+    const userSearch = searchInput.value;
 
-    searchCoins(query);
+    searchCoins(userSearch);
 
   }
 
-  async function searchCoins(query) {
+  async function searchCoins(userSearch) {
     const coins = await getJson("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1");
 
     const filteredCoins = coins.filter((coin) => {
-      return coin.name.toLowerCase().includes(query.toLowerCase()) || coin.symbol.toLowerCase().includes(query.toLowerCase());
+      return coin.name.toLowerCase().includes(userSearch.toLowerCase()) || coin.symbol.toLowerCase().includes(userSearch.toLowerCase());
     });
 
-    printCoins(filteredCoins);
+    printCoins(filteredCoins); // prints the coins of what user searched.
 
   }
-
-  // all the code above is fixed for now
-  // need to work on the code below - finish modal popping up after 5 choosen coin
-
-
-    ///////////////////////////////////////////////////////
-    /////////////////// SWITCH BUTTON LOGIC ///////////////////////////
-    function displayCoinsInModal(coins) {
-        const checkedCoins = [];
-        for (const coin of coins) {
-            const coinsSwitchBtn = document.getElementById(`${coin.market_cap_rank}`);
-            coinsSwitchBtn.addEventListener("click", function () {
-                const checkedCoin = this.id;
-                if (this.checked) {
-                    if (+checkedCoin === +coin.market_cap_rank && checkedCoins.length < 5) {
-                        checkedCoins.push(coins[(checkedCoin - 1)]);
-                    } else {
-                        showLimitReachedModal(checkedCoins);
-                        this.checked = false;
-                    }
-                } else {
-                    const index = (checkedCoin -1);
-                    if (index > -1) {
-                        checkedCoins.splice(index, 1);
-                        console.log(checkedCoins);
-                    }
-                }
-                })
-        }
-
-        const limitReachedModal = document.getElementById("limitReachedModal");
-        function showLimitReachedModal(checkedCoins) {
-            let html = "";
-            for (const coin of checkedCoins) {
-                const coinName = coin.id;
-                const coinId = coin.market_cap_rank;
-                html += `
-                <div class="modal-container">
-                <div class="cards-container">
-                <div class="card">
-                <img src="${coin.image}">
-                <div class="card-body">
-                <h5 class="card-title">${coin.symbol.toUpperCase()}</h5>
-                <p class="card-text">${coin.name}</p>
-                <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" id="${coinId}" checked>
-                <label class="form-check-label" for="flexSwitchCheckDefault"></label>
-                </div>
-                </div>
-                </div>
-                </div>
-                </div>
-                <br>`                
-            }
-
-            const limitReachedModalBody = limitReachedModal.querySelector(".modal-body");
-            limitReachedModalBody.innerHTML = html; 
-
-            const modalSwitches = limitReachedModalBody.getElementsByClassName("form-check-input");
-            for (const modalSwitch of modalSwitches) {
-              modalSwitch.addEventListener("click", function () {
-                const index = this.id;
-                checkedCoins.splice((index - 1), 1);
-                console.log(checkedCoins);
-                $(limitReachedModal).modal("hide");
-              });
-            }
-            $(limitReachedModal).modal("show");
-        }
-
-          const limitReachedModalCloseBtn = limitReachedModal.querySelector(".btn-secondary");
-          limitReachedModalCloseBtn.addEventListener("click", function () {
-            $(limitReachedModal).modal("hide");
-          });        
-    }
         
-})()
+})
