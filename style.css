@@ -30,6 +30,20 @@ body {
     text-shadow: 3px 3px white;
 }
 
+.chosen-coins {
+    position: relative;
+    margin: auto;
+    min-width: 300px;
+    max-width: 800px;
+}
+
+.chosen-coins p {
+    font-size: 30px;
+    text-align: center;
+    text-shadow: 1px 1px rgb(126, 126, 126);
+    color: rgb(0, 255, 0);
+}
+
 /* custom edit to bootstrap navbar and more */
 .navbar-bg {
     background-color: #000000;

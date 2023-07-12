@@ -149,18 +149,36 @@ $(() => {
               `
     }
 
-    $(document).on("change", ".form-check-input[type='checkbox']", function () {
-      const checkedCoins = $(".form-check-input[type='checkbox']:checked"); // every checked coin
-
-      if (checkedCoins.length > 5) { // 5 is the limit - if tries to reach more than the limit = showing showLimitReachedModal up.
-
-        $(this).prop("checked", false);
-        showLimitReachedModal(checkedCoins);
-
-      }
-    });
-
     mainContent.innerHTML = html;
+
+    // event listener to every checkbox
+    $(document).on("click" , ".form-check-input[type='checkbox']", function (event) {
+
+      let checkedCoins = []; // array of all the checked coins
+      let coinsList = $("#coinsList"); // div where all the checked coins will display on
+
+      let text = "<span>Coins Selected :</span>";
+      coinsList.html(text);
+
+      $(".form-check-input[type='checkbox']:checked").each(function () {
+        let coinName = $(this).closest(".card").find("h5.card-title").text(); // getting the coin name
+        checkedCoins.push(coinName); // pushing the coin name to the checked coins array
+      });
+    
+      coinsList.append(" " + checkedCoins.join(" / ")); // adding the checked coins to the coinList div
+
+      if (checkedCoins.length > 5) { // if the user is trying to choose more than 5
+        const coinsToDisplay = checkedCoins.slice(0, checkedCoins.length - 1); // all the coins excluding the last one!
+        showLimitReachedModal(coinsToDisplay); // the modal popping up with the selected coins.
+        event.preventDefault(); // preventing the user from selecting more
+      }
+    
+      $(".form-check-input[type='checkbox']:not(:checked)").each(function () { // every unselected checkbox
+        checkedCoins = checkedCoins.filter(c => c !== this.value); // deletes from array the unselected one.
+      });
+
+    })
+    
 
     // after being in currencies page you can access the More Info button here
     $(".more-info-button").on("click", displayMoreInfo); // every more info button. when clicked it calls displayMoreInfo
@@ -171,64 +189,17 @@ $(() => {
   const limitReachedModal = document.getElementById("limitReachedModal");
   function showLimitReachedModal(checkedCoins) {
 
-    checkedCoins.each(function () {
+    $(".modal-body").html(("<span>Coins Selected :</span><br>" + checkedCoins.join(" / ")) + "<br>5 / 5 coins were choosen. you can choose only 5 coins!");
 
-      let element = $(this);
-      let coin = {};
-
-      coin.image = element.find("img").attr("src");
-      coin.symbol = element.find("h5").text();
-      coin.name = element.find("p.card-text").text();
-
-      const html =
-      `
-      <div class="modal-container">
-
-        <div class="cards-container">
-
-          <div class="card">
-
-            <img src="${coin.image}">
-
-              <div class="card-body">
-
-                <h5 class="card-title">${coin.symbol.toUpperCase()}</h5>
-
-                <p class="card-text">${coin.name}</p>
-
-                  <div class="form-check form-switch">
-
-                    <input class="form-check-input" type="checkbox" role="switch" checked>
-                    <label class="form-check-label" for="flexSwitchCheckDefault"></label>
-
-                  </div>
-
-              </div>
-
-          </div>
-
-        </div>
-
-      </div>
-
-      <br>
-      `
-
-      const limitReachedModalBody = limitReachedModal.querySelector(".modal-body");
-      limitReachedModalBody.innerHTML = html; // GET http://127.0.0.1:5500/undefined 404 (Not Found)
-
-    })
-
-    $(limitReachedModal).modal("show"); // not shows all the 5 checked
+    $(limitReachedModal).modal("show");
       
-    // CLOSE BTN in the modal
     const limitReachedModalCloseBtn = limitReachedModal.querySelector(".btn-secondary");
 
-      limitReachedModalCloseBtn.addEventListener("click", function () {
+    limitReachedModalCloseBtn.addEventListener("click", function () {
 
-        $(limitReachedModal).modal("hide"); // when clicking close - hides the modal.
+    $(limitReachedModal).modal("hide");
 
-      });   
+    });   
   }
   
   // when pressing the More Info button it adds the data (collapse + -)
