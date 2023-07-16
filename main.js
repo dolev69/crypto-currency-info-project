@@ -85,6 +85,15 @@ $(() => {
     sessionStorage.setItem("coinsData" , JSON.stringify(coins));
   }
 
+  function saveToSessionStorageCheckedCoins(checkedCoins) {
+    const fiveCheckedCoins = checkedCoins;
+    if (fiveCheckedCoins.length > 5) {
+      // fiveCheckedCoins.pop();
+      console.log("hey");
+    }
+    sessionStorage.setItem("checkedCoins" , JSON.stringify(checkedCoins));
+  }
+
   // gets the data from the api and returns json of the data
   async function getJson(url) {
 
@@ -128,7 +137,7 @@ $(() => {
 
                         <div class="form-check form-switch">
 
-                          <input class="form-check-input" type="checkbox" role="switch" id="${coin.market_cap_rank}">
+                          <input class="form-check-input" type="checkbox" role="switch" id="${coin.market_cap_rank}" switch="${coin.symbol.toUpperCase()}">
 
                           <label class="form-check-label" for="flexSwitchCheckDefault"></label>
 
@@ -151,35 +160,46 @@ $(() => {
 
     mainContent.innerHTML = html;
 
-    // event listener to every checkbox
-    $(document).on("click" , ".form-check-input[type='checkbox']", function (event) {
+    let checkedCoins = []; // array of all the checked coins
+    let coinsList = $("#coinsList"); // div where all the checked coins will be displayed
 
-      let checkedCoins = []; // array of all the checked coins
-      let coinsList = $("#coinsList"); // div where all the checked coins will display on
+    for (const coin of coins) {
 
-      let text = "<span>Coins Selected :</span>";
-      coinsList.html(text);
+      const switchButton = document.getElementById(coin.market_cap_rank);
 
-      $(".form-check-input[type='checkbox']:checked").each(function () {
-        let coinName = $(this).closest(".card").find("h5.card-title").text(); // getting the coin name
-        checkedCoins.push(coinName); // pushing the coin name to the checked coins array
-      });
-    
-      coinsList.append(" " + checkedCoins.join(" / ")); // adding the checked coins to the coinList div
+      switchButton.addEventListener("change", function () {
+      const switchValue = this.getAttribute("switch");
 
-      if (checkedCoins.length > 5) { // if the user is trying to choose more than 5
-        const coinsToDisplay = checkedCoins.slice(0, checkedCoins.length - 1); // all the coins excluding the last one!
-        showLimitReachedModal(coinsToDisplay); // the modal popping up with the selected coins.
-        event.preventDefault(); // preventing the user from selecting more
+      if (this.checked) {
+        if (checkedCoins.length >= 5) {
+
+          this.checked = false; // Uncheck the switch button if the limit is reached
+          showLimitReachedModal(checkedCoins.slice(0, 5)); // Show the modal with the selected coins
+
+          return; // Exit the function to prevent further execution
+
+        }
+
+      checkedCoins.push(switchValue);
+      saveToSessionStorageCheckedCoins(checkedCoins);
+
+      } else {
+
+        const index = checkedCoins.indexOf(switchValue);
+
+        if (index !== -1) {
+
+          checkedCoins.splice(index, 1);
+          saveToSessionStorageCheckedCoins(checkedCoins);
+
+        }
+
       }
-    
-      $(".form-check-input[type='checkbox']:not(:checked)").each(function () { // every unselected checkbox
-        checkedCoins = checkedCoins.filter(c => c !== this.value); // deletes from array the unselected one.
+
+      coinsList.html("<span>Coins Selected:</span> " + checkedCoins.join(" / "));
       });
-
-    })
+    }
     
-
     // after being in currencies page you can access the More Info button here
     $(".more-info-button").on("click", displayMoreInfo); // every more info button. when clicked it calls displayMoreInfo
 
