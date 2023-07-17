@@ -280,7 +280,20 @@ $(() => {
   }
 
   async function searchCoins(userSearch) {
-    const coins = await getJson("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1"); // api call if the user starts by searching
+    const storedCoinsData = sessionStorage.getItem("coinsData"); // gets the data from session storage.
+    let coins;
+
+    if (storedCoinsData) { // if we already have the data then we just print the coins
+
+      coins = JSON.parse(storedCoinsData);
+      printCoins(coins);
+
+    }
+
+    else {
+
+      coins = await getJson("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1"); // api call
+    }
 
     const filteredCoins = coins.filter((coin) => {
       return coin.name.toLowerCase().includes(userSearch.toLowerCase()) || coin.symbol.toLowerCase().includes(userSearch.toLowerCase()); // looking for coin name or symbol (lowercase/uppercase does not matter)
