@@ -82,16 +82,21 @@ $(() => {
 
   // saving to session storage to prevent spamming the api
   function saveToSessionStorage(coins) {
-    sessionStorage.setItem("coinsData" , JSON.stringify(coins));
+    sessionStorage.setItem("coinsData" , JSON.stringify(coins)); // stores the coins data in session storage
   }
 
   function saveToSessionStorageCheckedCoins(checkedCoins) {
-    const fiveCheckedCoins = checkedCoins;
-    if (fiveCheckedCoins.length > 5) {
-      // fiveCheckedCoins.pop();
-      console.log("hey");
+    sessionStorage.setItem("checkedCoins" , JSON.stringify(checkedCoins)); // stores the checked coins in the session storage
     }
-    sessionStorage.setItem("checkedCoins" , JSON.stringify(checkedCoins));
+
+  function getFromSessionStorageCheckedCoins() { // getting the stored data of checked coins
+
+    const getItem = sessionStorage.getItem("checkedCoins");
+
+    if (getItem) {
+      const checkedC = JSON.parse(getItem);
+      return checkedC;
+    }
   }
 
   // gets the data from the api and returns json of the data
@@ -160,46 +165,43 @@ $(() => {
 
     mainContent.innerHTML = html;
 
-    let checkedCoins = []; // array of all the checked coins
+    let checkedCoins = getFromSessionStorageCheckedCoins() || []; // array of all the checked coins (default to an empty array if not found)
     let coinsList = $("#coinsList"); // div where all the checked coins will be displayed
-
+  
     for (const coin of coins) {
-
       const switchButton = document.getElementById(coin.market_cap_rank);
-
+  
       switchButton.addEventListener("change", function () {
-      const switchValue = this.getAttribute("switch");
+        const switchValue = this.getAttribute("switch");
+  
+        if (this.checked) {
+          if (checkedCoins.length >= 5) {
+            this.checked = false; // Uncheck the switch button if the limit is reached
+            showLimitReachedModal(checkedCoins.slice(0, 5)); // Show the modal with the selected coins
+            return; // Exit the function to prevent further execution
+          }
+  
+          checkedCoins.push(switchValue); // pushing the checked coin to the checkedCoins array
 
-      if (this.checked) {
-        if (checkedCoins.length >= 5) {
+        } else {
 
-          this.checked = false; // Uncheck the switch button if the limit is reached
-          showLimitReachedModal(checkedCoins.slice(0, 5)); // Show the modal with the selected coins
-
-          return; // Exit the function to prevent further execution
-
+          const index = checkedCoins.indexOf(switchValue); // getting the index of the unchecked coin;
+  
+          if (index !== -1) {
+            checkedCoins.splice(index, 1); // removing the unchecked coin from the aray
+          }
         }
-
-      checkedCoins.push(switchValue);
-      saveToSessionStorageCheckedCoins(checkedCoins);
-
-      } else {
-
-        const index = checkedCoins.indexOf(switchValue);
-
-        if (index !== -1) {
-
-          checkedCoins.splice(index, 1);
-          saveToSessionStorageCheckedCoins(checkedCoins);
-
-        }
-
-      }
-
-      coinsList.html("<span>Coins Selected:</span> " + checkedCoins.join(" / "));
+  
+        saveToSessionStorageCheckedCoins(checkedCoins); // saving to checked coins session storage
+        coinsList.html("<span>Coins Selected:</span> " + checkedCoins.join(" / ")); // displaying the selected coins
       });
+  
+      if (checkedCoins.includes(coin.symbol.toUpperCase())) { // if there's already checked coins in session storage so it keeps them checked and displays
+        switchButton.checked = true;
+        coinsList.html("<span>Coins Selected:</span> " + checkedCoins.join(" / ")); 
+      }
     }
-    
+
     // after being in currencies page you can access the More Info button here
     $(".more-info-button").on("click", displayMoreInfo); // every more info button. when clicked it calls displayMoreInfo
 
@@ -241,7 +243,7 @@ $(() => {
     const moreInfoContent = document.getElementById(`moreInfoContent-${coinId}`);
     moreInfoContent.classList.toggle("show");
             
-    if (moreInfoContent.classList.contains("show")) {
+    if (moreInfoContent.classList.contains("show")) { // shows the info in ILS / USD / EUR
       moreInfoContent.innerHTML =
         `
         ILS = ₪${coin.market_data.current_price.ils}
@@ -267,21 +269,21 @@ $(() => {
 
   // search input top right - searching by coin name or coin symbol
   const searchForm = document.getElementById("searchForm");
-  searchForm.addEventListener("input", search);
+  searchForm.addEventListener("input", search); // event listner to the search input
 
   function search() {
     const searchInput = document.getElementById("searchInput");
-    const userSearch = searchInput.value;
+    const userSearch = searchInput.value; // what the user types for search
 
-    searchCoins(userSearch);
+    searchCoins(userSearch); // searching what the user types
 
   }
 
   async function searchCoins(userSearch) {
-    const coins = await getJson("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1");
+    const coins = await getJson("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1"); // api call if the user starts by searching
 
     const filteredCoins = coins.filter((coin) => {
-      return coin.name.toLowerCase().includes(userSearch.toLowerCase()) || coin.symbol.toLowerCase().includes(userSearch.toLowerCase());
+      return coin.name.toLowerCase().includes(userSearch.toLowerCase()) || coin.symbol.toLowerCase().includes(userSearch.toLowerCase()); // looking for coin name or symbol (lowercase/uppercase does not matter)
     });
 
     printCoins(filteredCoins); // prints the coins of what user searched.
