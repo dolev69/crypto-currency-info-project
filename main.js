@@ -11,6 +11,7 @@ $(() => {
   currenciesLink.addEventListener("click", displayCurrencies);
   
   async function displayCurrencies() {
+
     const spinner = document.getElementById("spinner"); // loading spinner (modified in css).
 
     spinner.style.display = "inline-block"; // shows the loading spinner.
@@ -42,7 +43,121 @@ $(() => {
   liveReportsLink.addEventListener("click", displayLiveReports);
   
   function displayLiveReports() {
-    mainContent.innerHTML = `<img src="assets/underConstruction.png">` // Live Reports page under construction image.
+
+    let interval; // this variable will hold setInterval and will be used to clearInterval
+
+    // displays 2 buttons and the live report div
+    mainContent.innerHTML = `
+      <div style="text-align: center">
+
+        <h2>Press "START" and press <span style="color: red;">"STOP"</span> TO CHECK PRICES</h2>(updates prices every 5 seconds)
+
+        <br><br>
+
+          <button id="startLiveReport" class="btn btn-success">START</button><div class="spinner" id="liveReportSpinner" style="margin-top: 10px; height: 20px; width: 20px;"></div>
+
+          <button id="stopLiveReport" class="btn btn-danger">STOP</button>
+
+      </div>
+
+      <div id="chartContainer" style="height: 370px; width: 100%; background-color: white;"></div>`;
+
+
+    const startLiveReport = document.getElementById("startLiveReport");
+    const stopLiveReport = document.getElementById("stopLiveReport");
+
+    const spinner = document.getElementById("liveReportSpinner"); // loading spinner (modified in css).
+
+    startLiveReport.addEventListener("click", () => { // Live Report Button starts the live report.
+
+      spinner.style.display = "inline-block"; // shows the loading spinner.
+
+      interval = setInterval(async function () {
+        const checkedCoins = JSON.parse(sessionStorage.getItem("checkedCoins")); // all the checked coins
+        const datasets = []; // Array to hold datasets for all coins
+
+        for (const coin of checkedCoins) {
+
+          const liveCoins = await getJson(`https://min-api.cryptocompare.com/data/pricemulti?fsyms=${coin}&tsyms=USD`); // api call to the checked coin USD value
+    
+          const usdValue = liveCoins[coin].USD; // USD value of every coin
+          
+          // Add the data point for the current coin to the array
+          const dataPointsArray = [
+            { x: new Date(2023, 6, 1), y: (usdValue - 1) },
+            { x: new Date(2023, 6, 2), y: (usdValue - 1) },
+            { x: new Date(), y: usdValue }];
+          
+          const dataset = {
+            type: "spline",
+            name: coin,
+            showInLegend: true,
+            xValueFormatString: "MMM YYYY",
+            yValueFormatString: "$#,##0.#",
+            dataPoints: dataPointsArray
+          };
+
+          datasets.push(dataset); // the dataset for the graph display
+
+        }
+          
+        var options = { // graph
+          exportEnabled: true,
+          animationEnabled: true,
+          title:{
+          text: "CCI - Crypto Currency Info - Live Reports"
+          },
+          subtitles: [{
+            text: "MADE BY DOLEVM"
+          }],
+          axisX: {
+            title: "Coins:"
+          },
+          axisY: {
+            title: "COIN USD VALUE",
+            titleFontColor: "red",
+            lineColor: "red",
+            labelFontColor: "red",
+            tickColor: "red"
+          },
+          axisY2: {
+            title: "COIN USD VALUE",
+            titleFontColor: "#C0504E",
+            lineColor: "#C0504E",
+            labelFontColor: "#C0504E",
+            tickColor: "#C0504E"
+          },
+          toolTip: {
+            shared: true
+          },
+          legend: {
+            cursor: "pointer",
+            itemclick: toggleDataSeries
+          },
+          data: datasets
+        }; // end of graph
+  
+        $("#chartContainer").CanvasJSChart(options);
+          
+        function toggleDataSeries(e) {
+          if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+            e.dataSeries.visible = false;
+          } else {
+            e.dataSeries.visible = true;
+          }
+          e.chart.render();
+        }
+      }, 5000);
+
+      setTimeout(() => {
+        spinner.style.display = "none"; // hides the loading spinner when done.
+      }, 5000);
+      
+    });
+
+    stopLiveReport.addEventListener("click", () => {
+      clearInterval(interval);
+    })
   }
   
   // display the about me page when clicked
