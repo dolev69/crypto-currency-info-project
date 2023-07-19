@@ -2,6 +2,8 @@
 
 $(() => {
 
+  let interval; // this variable will hold setInterval and will be used to clearInterval
+
   const currenciesLink = document.getElementById("currenciesLink");
   const liveReportsLink = document.getElementById("liveReportsLink");
   const aboutLink = document.getElementById("aboutLink");
@@ -11,6 +13,8 @@ $(() => {
   currenciesLink.addEventListener("click", displayCurrencies);
   
   async function displayCurrencies() {
+
+    clearInterval(interval);
 
     const spinner = document.getElementById("spinner"); // loading spinner (modified in css).
 
@@ -39,18 +43,18 @@ $(() => {
   
   }
   
+
+  ///// BONUS - live reports graph //////
   // diplays the live reports page when clicked
   liveReportsLink.addEventListener("click", displayLiveReports);
   
   function displayLiveReports() {
 
-    let interval; // this variable will hold setInterval and will be used to clearInterval
-
     // displays 2 buttons and the live report div
     mainContent.innerHTML = `
       <div style="text-align: center">
 
-        <h2>Press "START" and press <span style="color: red;">"STOP"</span> TO CHECK PRICES</h2>(updates prices every 5 seconds)
+        <h2>Press "START" and press <span style="color: red;">"STOP"</span> TO CHECK PRICES</h2>(updates prices every 2 seconds)
 
         <br><br>
 
@@ -68,90 +72,143 @@ $(() => {
 
     const spinner = document.getElementById("liveReportSpinner"); // loading spinner (modified in css).
 
-    startLiveReport.addEventListener("click", () => { // Live Report Button starts the live report.
+    async function getHistoricalData(coin) { // just to get some info about the past USD value to make a nice display in the graph instead of single dot of current price.
+      // calculates the date range for the past week
+      const today = new Date();
+      const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    
+      const toTs = Math.floor(today.getTime() / 1000);
+      const fromTs = Math.floor(oneWeekAgo.getTime() / 1000);
+    
+      const endpoint = `https://min-api.cryptocompare.com/data/v2/histoday?fsym=${coin}&tsym=USD&limit=7&toTs=${toTs}&aggregate=1`; // api link
+    
+      // Fetch the historical data
+      const response = await fetch(endpoint); // api call to the history data
+      const data = await response.json();
+      return data.Data.Data;
+    }
+
+    function parseHistoricalData(historicalData) { // shows the past usd data in the graph
+      return historicalData.map((data) => ({
+        x: new Date(data.time * 1000),
+        y: data.close,
+      }));
+    }
+
+    startLiveReport.addEventListener("click", async () => { // Live Report Button starts the live report.
+
+      const checkedCoins = JSON.parse(sessionStorage.getItem("checkedCoins")); // all the checked coins
 
       spinner.style.display = "inline-block"; // shows the loading spinner.
 
+      const coinDataPoints = {};
+
+      for (const coin of checkedCoins) {
+        const historicalData = await getHistoricalData(coin);
+        coinDataPoints[coin] = parseHistoricalData(historicalData);
+      }
+
+      const datasets = Object.entries(coinDataPoints).map(([coin, dataPoints]) => ({
+
+        type: "spline",
+        name: coin,
+        showInLegend: true,
+        xValueFormatString: "MMM YYYY",
+        yValueFormatString: "$#,##0.#",
+        dataPoints: dataPoints,
+
+      }));
+
+        // Configure graph options
+  const options = {
+    exportEnabled: true,
+    animationEnabled: true,
+    title: {
+      text: "CCI - Crypto Currency Info - Historical Data",
+    },
+    subtitles: [
+      {
+        text: "MADE BY DOLEVM",
+      },
+    ],
+    axisX: {
+      title: "Date",
+      type: "dateTime", // Set the x-axis type to dateTime
+    },
+    axisY: {
+      title: "COIN USD VALUE",
+      titleFontColor: "red",
+      lineColor: "red",
+      labelFontColor: "red",
+      tickColor: "red",
+      minimum: 0,
+      maximum: 50000,
+    },
+    axisY2: {
+      title: "COIN USD VALUE",
+      titleFontColor: "#C0504E",
+      lineColor: "#C0504E",
+      labelFontColor: "#C0504E",
+      tickColor: "#C0504E",
+    },
+    toolTip: {
+      shared: true,
+    },
+    legend: {
+      cursor: "pointer",
+      itemclick: toggleDataSeries,
+    },
+    data: datasets,
+  };
+
+  $("#chartContainer").CanvasJSChart(options);
+
+  // Function to toggle data series visibility
+function toggleDataSeries(e) {
+  if (typeof e.dataSeries.visible === "undefined" || e.dataSeries.visible) {
+    e.dataSeries.visible = false;
+  } else {
+    e.dataSeries.visible = true;
+  }
+  e.chart.render();
+}
+
+  spinner.style.display = "none"; // Hide the loading spinner
+
       interval = setInterval(async function () {
-        const checkedCoins = JSON.parse(sessionStorage.getItem("checkedCoins")); // all the checked coins
-        const datasets = []; // Array to hold datasets for all coins
 
         for (const coin of checkedCoins) {
 
           const liveCoins = await getJson(`https://min-api.cryptocompare.com/data/pricemulti?fsyms=${coin}&tsyms=USD`); // api call to the checked coin USD value
     
           const usdValue = liveCoins[coin].USD; // USD value of every coin
+
+          if (!coinDataPoints[coin]) {
+            coinDataPoints[coin] = [];
+          }
           
           // Add the data point for the current coin to the array
-          const dataPointsArray = [
-            { x: new Date(2023, 6, 1), y: (usdValue - 1) },
-            { x: new Date(2023, 6, 2), y: (usdValue - 1) },
-            { x: new Date(), y: usdValue }];
+          coinDataPoints[coin].push({ x: Date.now(), y: usdValue });
           
-          const dataset = {
-            type: "spline",
-            name: coin,
-            showInLegend: true,
-            xValueFormatString: "MMM YYYY",
-            yValueFormatString: "$#,##0.#",
-            dataPoints: dataPointsArray
-          };
-
-          datasets.push(dataset); // the dataset for the graph display
-
-        }
-          
-        var options = { // graph
-          exportEnabled: true,
-          animationEnabled: true,
-          title:{
-          text: "CCI - Crypto Currency Info - Live Reports"
-          },
-          subtitles: [{
-            text: "MADE BY DOLEVM"
-          }],
-          axisX: {
-            title: "Coins:"
-          },
-          axisY: {
-            title: "COIN USD VALUE",
-            titleFontColor: "red",
-            lineColor: "red",
-            labelFontColor: "red",
-            tickColor: "red"
-          },
-          axisY2: {
-            title: "COIN USD VALUE",
-            titleFontColor: "#C0504E",
-            lineColor: "#C0504E",
-            labelFontColor: "#C0504E",
-            tickColor: "#C0504E"
-          },
-          toolTip: {
-            shared: true
-          },
-          legend: {
-            cursor: "pointer",
-            itemclick: toggleDataSeries
-          },
-          data: datasets
-        }; // end of graph
-  
-        $("#chartContainer").CanvasJSChart(options);
-          
-        function toggleDataSeries(e) {
-          if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
-            e.dataSeries.visible = false;
-          } else {
-            e.dataSeries.visible = true;
+          if (coinDataPoints[coin].length > 10) {
+            coinDataPoints[coin].shift(); // Remove the first data point (oldest data point) from the array.
           }
-          e.chart.render();
         }
-      }, 5000);
+          
+      }, 2000);
+
+      function toggleDataSeries(e) {
+        if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+          e.dataSeries.visible = false;
+        } else {
+          e.dataSeries.visible = true;
+        }
+        e.chart.render();
+      }
 
       setTimeout(() => {
         spinner.style.display = "none"; // hides the loading spinner when done.
-      }, 5000);
+      }, 2000);
       
     });
 
@@ -164,6 +221,9 @@ $(() => {
   aboutLink.addEventListener("click", displayAbout);
 
   function displayAbout() {
+
+    clearInterval(interval);
+
     mainContent.innerHTML =
       `
         <div class="about">
