@@ -50,21 +50,20 @@ $(() => {
   
   async function displayLiveReports() {
 
+    const checkedCoins = JSON.parse(sessionStorage.getItem("checkedCoins")); // all the checked coins
+
+    const coinDataPoints = {};
+
+    if (checkedCoins) {
+
     // displays 2 buttons and the live report div
     mainContent.innerHTML = `<div id="chartContainer" style="height: 370px; width: 100%; background-color: white;"></div>`;
 
-    const startLiveReport = document.getElementById("startLiveReport");
-    const stopLiveReport = document.getElementById("stopLiveReport");
-
-    const spinner = document.getElementById("liveReportSpinner"); // loading spinner (modified in css).
-
     async function getHistoricalData(coin) { // just to get some info about the past USD value to make a nice display in the graph instead of single dot of current price.
-      // calculates the date range for the past week
+      
       const today = new Date();
-      const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
     
       const toTs = Math.floor(today.getTime() / 1000);
-      const fromTs = Math.floor(oneWeekAgo.getTime() / 1000);
     
       const endpoint = `https://min-api.cryptocompare.com/data/v2/histoday?fsym=${coin}&tsym=USD&limit=7&toTs=${toTs}&aggregate=1`; // api link
     
@@ -80,10 +79,6 @@ $(() => {
         y: data.close,
       }));
     }
-
-      const checkedCoins = JSON.parse(sessionStorage.getItem("checkedCoins")); // all the checked coins
-
-      const coinDataPoints = {};
 
       for (const coin of checkedCoins) {
         const historicalData = await getHistoricalData(coin);
@@ -145,7 +140,6 @@ $(() => {
 
   $("#chartContainer").CanvasJSChart(options);
 
-  // Function to toggle data series visibility
 function toggleDataSeries(e) {
   if (typeof e.dataSeries.visible === "undefined" || e.dataSeries.visible) {
     e.dataSeries.visible = false;
@@ -177,14 +171,9 @@ function toggleDataSeries(e) {
           
       }, 2000);
 
-      function toggleDataSeries(e) {
-        if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
-          e.dataSeries.visible = false;
-        } else {
-          e.dataSeries.visible = true;
-        }
-        e.chart.render();
-      }
+    } else {
+      mainContent.innerHTML = `<h2>SELECT 1-5 COINS TO ACTIVATE LIVE REPORT`
+    }
   }
   
   // display the about me page when clicked
@@ -425,8 +414,6 @@ function toggleDataSeries(e) {
   }
 
   async function searchCoins(userSearch) {
-    clearInterval(interval);
-
     const storedCoinsData = sessionStorage.getItem("coinsData"); // gets the data from session storage.
     let coins;
 
