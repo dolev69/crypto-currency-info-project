@@ -48,24 +48,10 @@ $(() => {
   // diplays the live reports page when clicked
   liveReportsLink.addEventListener("click", displayLiveReports);
   
-  function displayLiveReports() {
+  async function displayLiveReports() {
 
     // displays 2 buttons and the live report div
-    mainContent.innerHTML = `
-      <div style="text-align: center">
-
-        <h2>Press "START" and press <span style="color: red;">"STOP"</span> TO CHECK PRICES</h2>(updates prices every 2 seconds)
-
-        <br><br>
-
-          <button id="startLiveReport" class="btn btn-success">START</button><div class="spinner" id="liveReportSpinner" style="margin-top: 10px; height: 20px; width: 20px;"></div>
-
-          <button id="stopLiveReport" class="btn btn-danger">STOP</button>
-
-      </div>
-
-      <div id="chartContainer" style="height: 370px; width: 100%; background-color: white;"></div>`;
-
+    mainContent.innerHTML = `<div id="chartContainer" style="height: 370px; width: 100%; background-color: white;"></div>`;
 
     const startLiveReport = document.getElementById("startLiveReport");
     const stopLiveReport = document.getElementById("stopLiveReport");
@@ -95,11 +81,7 @@ $(() => {
       }));
     }
 
-    startLiveReport.addEventListener("click", async () => { // Live Report Button starts the live report.
-
       const checkedCoins = JSON.parse(sessionStorage.getItem("checkedCoins")); // all the checked coins
-
-      spinner.style.display = "inline-block"; // shows the loading spinner.
 
       const coinDataPoints = {};
 
@@ -173,8 +155,6 @@ function toggleDataSeries(e) {
   e.chart.render();
 }
 
-  spinner.style.display = "none"; // Hide the loading spinner
-
       interval = setInterval(async function () {
 
         for (const coin of checkedCoins) {
@@ -205,16 +185,6 @@ function toggleDataSeries(e) {
         }
         e.chart.render();
       }
-
-      setTimeout(() => {
-        spinner.style.display = "none"; // hides the loading spinner when done.
-      }, 2000);
-      
-    });
-
-    stopLiveReport.addEventListener("click", () => {
-      clearInterval(interval);
-    })
   }
   
   // display the about me page when clicked
@@ -455,6 +425,8 @@ function toggleDataSeries(e) {
   }
 
   async function searchCoins(userSearch) {
+    clearInterval(interval);
+
     const storedCoinsData = sessionStorage.getItem("coinsData"); // gets the data from session storage.
     let coins;
 
