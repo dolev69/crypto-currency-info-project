@@ -384,7 +384,7 @@ function toggleDataSeries(e) {
           <br>
         USD = $${coin.market_data.current_price.usd}
           <br>
-        EUR = €${coin.market_data.current_price.usd}
+        EUR = €${coin.market_data.current_price.eur}
         `;
         
         button.textContent = "More Info -";
