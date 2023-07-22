@@ -16,30 +16,39 @@ $(() => {
 
     clearInterval(interval);
 
-    const spinner = document.getElementById("spinner"); // loading spinner (modified in css).
+    try {
 
-    spinner.style.display = "inline-block"; // shows the loading spinner.
+      const spinner = document.getElementById("spinner"); // loading spinner (modified in css).
 
-    const storedCoinsData = sessionStorage.getItem("coinsData"); // gets the data from session storage.
-    let coins;
+      spinner.style.display = "inline-block"; // shows the loading spinner.
 
-    if (storedCoinsData) { // if we already have the data then we just print the coins
+      const storedCoinsData = sessionStorage.getItem("coinsData"); // gets the data from session storage.
+      let coins;
 
-      coins = JSON.parse(storedCoinsData);
-      printCoins(coins);
+      if (storedCoinsData) { // if we already have the data then we just print the coins
 
+        coins = JSON.parse(storedCoinsData);
+        printCoins(coins);
+
+      }
+
+      else {
+
+        coins = await getJson("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1"); // api call
+        printCoins(coins);
+
+        saveToSessionStorage(coins); // saving to session storage - incase of reload window.
+
+      }
     }
 
-    else {
-
-      coins = await getJson("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1"); // api call
-      printCoins(coins);
-
-      saveToSessionStorage(coins); // saving to session storage - incase of reload window.
-
+    catch (err) {
+      console.log(`Error displaying the currencies: ${err}`);
     }
 
-    spinner.style.display = "none"; // hides the loading spinner when done.
+    finally {
+      spinner.style.display = "none"; // hides the loading spinner when done.
+    }
   
   }
   
