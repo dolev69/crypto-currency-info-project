@@ -315,8 +315,8 @@ function toggleDataSeries(e) {
   
         if (this.checked) {
           if (checkedCoins.length >= 5) {
+            showLimitReachedModal(checkedCoins, coins); // Show the modal with the selected coins
             this.checked = false; // Uncheck the switch button if the limit is reached
-            showLimitReachedModal(checkedCoins.slice(0, 5)); // Show the modal with the selected coins
           }
   
           checkedCoins.push(switchValue); // pushing the checked coin to the checkedCoins array
@@ -347,7 +347,7 @@ function toggleDataSeries(e) {
 
   // modal popping up after 5 checked coins
   const limitReachedModal = document.getElementById("limitReachedModal");
-  function showLimitReachedModal(checkedCoins) {
+  function showLimitReachedModal(checkedCoins, coins) {
 
     let html = "";
 
@@ -387,6 +387,7 @@ function toggleDataSeries(e) {
         
         saveToSessionStorageCheckedCoins(checkedCoins);
         $(limitReachedModal).modal("hide");
+        printCoins(coins);
       });
     }
       
