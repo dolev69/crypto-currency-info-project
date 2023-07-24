@@ -198,21 +198,17 @@ function toggleDataSeries(e) {
 
           <h1>About me</h1>
 
-          <img src="assets/motilugasi69.jpeg" width="200">
+          <img src="assets/profilePic.png" width="200">
 
           <p>
 
-            Moti Lugasi<br><br>
+            Dolev Mizrachi<br><br>
   
-            motilugasy69@gmail.com<br><br>
+            dolevmizrachii@gmail.com<br><br>
 
             <div class="social-media">
 
-              <a href="https://www.tiktok.com/@motilugasi69?lang=en" target="_blank"><i class='bx bxl-tiktok' ></i></a>
-
               <a href="https://github.com/dolev69" target="_blank"><i class='bx bxl-github' ></i></a>
-
-              <a href="https://www.instagram.com/motilugasi69/" target="_blank"><i class='bx bxl-instagram' ></i></a>
 
             </div>
 
@@ -321,7 +317,6 @@ function toggleDataSeries(e) {
           if (checkedCoins.length >= 5) {
             this.checked = false; // Uncheck the switch button if the limit is reached
             showLimitReachedModal(checkedCoins.slice(0, 5)); // Show the modal with the selected coins
-            return; // Exit the function to prevent further execution
           }
   
           checkedCoins.push(switchValue); // pushing the checked coin to the checkedCoins array
@@ -354,17 +349,47 @@ function toggleDataSeries(e) {
   const limitReachedModal = document.getElementById("limitReachedModal");
   function showLimitReachedModal(checkedCoins) {
 
-    $(".modal-body").html(("<span>Coins Selected :</span><br>" + checkedCoins.join(" / ")) + "<br>5 / 5 coins were choosen. you can choose only 5 coins!");
+    let html = "";
 
+    for (const coin of checkedCoins) {
+      html += 
+        `<div><h5 class="card-title">${coin.toUpperCase()}</h5>
+        
+        <div class="form-check form-switch">
+
+          <input class="form-check-input" type="checkbox" role="switch" id="${coin}" checked>
+
+          <label class="form-check-label" for="flexSwitchCheckDefault"></label>
+
+        </div></div>`
+    }
+
+    $(".modal-body").html(html);
     $(limitReachedModal).modal("show");
-      
+
     const limitReachedModalCloseBtn = limitReachedModal.querySelector(".btn-secondary");
-
     limitReachedModalCloseBtn.addEventListener("click", function () {
-
     $(limitReachedModal).modal("hide");
-
     });   
+
+    for (const coin of checkedCoins) {
+      const switchButton = document.getElementById(coin);
+      switchButton.addEventListener("change", function () {
+        const switchValue = this.getAttribute("id"); // Use "id" instead of "switch"
+        
+        if (!this.checked) {
+          // Unchecking the coin
+          const index = checkedCoins.indexOf(switchValue);
+          if (index !== -1) {
+            checkedCoins.splice(index, 1); // Remove the unchecked coin from the array
+          }
+        }
+        
+        saveToSessionStorageCheckedCoins(checkedCoins);
+        $(limitReachedModal).modal("hide");
+      });
+    }
+      
   }
 
   function saveToSessionStorageMoreInfo(coinName) { // saving the MORE INFO - ILS USD EUR api to session storage

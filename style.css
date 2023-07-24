@@ -114,6 +114,12 @@ h2 {
     width: 100px;
 }
 
+.modal-body {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+}
+
 .spinner {
     margin-left: 5px;
     display: none;
