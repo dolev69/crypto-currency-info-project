@@ -366,6 +366,10 @@ function toggleDataSeries(e) {
 
     });   
   }
+
+  function saveToSessionStorageMoreInfo(coinName) { // saving the MORE INFO - ILS USD EUR api to session storage
+    sessionStorage.setItem("moreInfoSavedCoins", JSON.stringify(coinName));
+  }
   
   // when pressing the More Info button it adds the data (collapse + -)
   async function displayMoreInfo() {
@@ -380,30 +384,65 @@ function toggleDataSeries(e) {
     const spinner = document.getElementById(`spinnerId${coinId}`); // loading spinner
     spinner.style.display = "inline-block"; // shows the loading spinner
 
-    // coin takes the specific coin that the user pressed more info on
-    const coin = await getJson(`https://api.coingecko.com/api/v3/coins/${coinName}`);
+    const storedMoreInfoData = sessionStorage.getItem("moreInfoSavedCoins"); // getting the stored data of the more info api
+    let coin;
 
     const moreInfoContent = document.getElementById(`moreInfoContent-${coinId}`);
     moreInfoContent.classList.toggle("show");
-            
-    if (moreInfoContent.classList.contains("show")) { // shows the info in ILS / USD / EUR
-      moreInfoContent.innerHTML =
-        `
-        ILS = ₪${coin.market_data.current_price.ils}
-          <br>
-        USD = $${coin.market_data.current_price.usd}
-          <br>
-        EUR = €${coin.market_data.current_price.eur}
-        `;
-        
-        button.textContent = "More Info -";
+
+    if (storedMoreInfoData) { // if there's already data it prevents api call multiple times.
+
+      coin = JSON.parse(storedMoreInfoData);
+
+      if (moreInfoContent.classList.contains("show")) { // shows the info in ILS / USD / EUR
+
+        moreInfoContent.innerHTML =
+          `
+          ILS = ₪${coin.market_data.current_price.ils}
+            <br>
+          USD = $${coin.market_data.current_price.usd}
+            <br>
+          EUR = €${coin.market_data.current_price.eur}
+          `;
+          
+          button.textContent = "More Info -";
+      }
+  
+      else {
+  
+        moreInfoContent.innerHTML = "";
+        button.textContent = "More Info +";
+  
+      }
     }
 
     else {
+      
+      // coin takes the specific coin that the user pressed more info on
+      coin = await getJson(`https://api.coingecko.com/api/v3/coins/${coinName}`); // api call to get the ILS USD EUR value
 
-      moreInfoContent.innerHTML = "";
-      button.textContent = "More Info +";
+      if (moreInfoContent.classList.contains("show")) { // shows the info in ILS / USD / EUR
 
+        moreInfoContent.innerHTML =
+          `
+          ILS = ₪${coin.market_data.current_price.ils}
+            <br>
+          USD = $${coin.market_data.current_price.usd}
+            <br>
+          EUR = €${coin.market_data.current_price.eur}
+          `;
+        
+        button.textContent = "More Info -";
+      }
+
+      else {
+
+        moreInfoContent.innerHTML = "";
+        button.textContent = "More Info +";
+
+      }
+
+      saveToSessionStorageMoreInfo(coin); // saving the data from the api.
     }
 
     spinner.style.display = "none"; // hides the loading spinner when done.
@@ -436,13 +475,18 @@ function toggleDataSeries(e) {
     else {
 
       coins = await getJson("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1"); // api call
+
     }
 
     const filteredCoins = coins.filter((coin) => {
       return coin.name.toLowerCase().includes(userSearch.toLowerCase()) || coin.symbol.toLowerCase().includes(userSearch.toLowerCase()); // looking for coin name or symbol (lowercase/uppercase does not matter)
     });
 
-    printCoins(filteredCoins); // prints the coins of what user searched.
+    if (filteredCoins.length === 0) {
+      mainContent.innerHTML = `<h2>No matching coins</h2>` // if search does not show any coins.
+    } else {
+      printCoins(filteredCoins); // prints the coins of what user searched.
+    }
 
   }
         
