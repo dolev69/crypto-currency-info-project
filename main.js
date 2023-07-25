@@ -369,8 +369,23 @@ function toggleDataSeries(e) {
 
     const limitReachedModalCloseBtn = limitReachedModal.querySelector(".btn-secondary");
     limitReachedModalCloseBtn.addEventListener("click", function () {
-    $(limitReachedModal).modal("hide");
-    });   
+      
+      if (checkedCoins.length > 5) {
+        checkedCoins.pop();
+      }
+      saveToSessionStorageCheckedCoins(checkedCoins);
+      $(limitReachedModal).modal("hide");
+      printCoins(coins);
+    }); 
+
+    $(limitReachedModal).on("hidden.bs.modal", function () {
+
+      if (checkedCoins.length > 5) {
+        checkedCoins.pop();
+        saveToSessionStorageCheckedCoins(checkedCoins);
+        printCoins(coins);
+      }
+    });
 
     for (const coin of checkedCoins) {
       const switchButton = document.getElementById(coin);
