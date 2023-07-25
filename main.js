@@ -393,8 +393,14 @@ function toggleDataSeries(e) {
       
   }
 
-  function saveToSessionStorageMoreInfo(coinName) { // saving the MORE INFO - ILS USD EUR api to session storage
-    sessionStorage.setItem("moreInfoSavedCoins", JSON.stringify(coinName));
+  function saveToSessionStorageMoreInfo(coin) { // saving the MORE INFO - ILS USD EUR api to session storage
+
+    const date = new Date().setMinutes(new Date().getMinutes() + 2); // 2 minutes from current time
+
+    sessionStorage.setItem("moreInfoSavedCoins", JSON.stringify({
+      coin,
+      expDate: date
+    }));
   }
   
   // when pressing the More Info button it adds the data (collapse + -)
@@ -418,7 +424,15 @@ function toggleDataSeries(e) {
 
     if (storedMoreInfoData) { // if there's already data it prevents api call multiple times.
 
-      coin = JSON.parse(storedMoreInfoData);
+      const res = (new Date()).getTime() > JSON.parse(storedMoreInfoData).expDate;
+
+      if (res) { // if the stored more info data is older than 2 minutes = NEW API CALL
+        sessionStorage.removeItem("moreInfoSavedCoins");
+        coin = await getJson(`https://api.coingecko.com/api/v3/coins/${coinName}`);
+        saveToSessionStorage(coin);
+      }
+
+      coin = JSON.parse(storedMoreInfoData).coin;
 
       if (moreInfoContent.classList.contains("show")) { // shows the info in ILS / USD / EUR
 
