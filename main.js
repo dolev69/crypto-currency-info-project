@@ -289,7 +289,9 @@ function toggleDataSeries(e) {
 
                         <br>
 
-                          <a href="#" class="btn btn-success more-info-button" data-coin-id="${coin.market_cap_rank}" data-coin-name="${coin.id}">More Info +</a><div class="spinner" id="spinnerId${coin.market_cap_rank}"></div>
+                        <a class="btn btn-success" data-toggle="collapse" data-coin-name="${coin.id}" id="collapseBtn${coin.market_cap_rank}" role="button" aria-expanded="false" aria-controls="collapseExample">More Info</a><div class="spinner" id="spinnerId${coin.market_cap_rank}"></div>
+
+                        <div class="collapse" id="collapseId${coin.market_cap_rank}"></div>
 
                         <div class="moreInfo" id="moreInfoContent-${coin.market_cap_rank}"></div>
 
@@ -300,9 +302,78 @@ function toggleDataSeries(e) {
               </div>
 
               `
+            
     }
 
     mainContent.innerHTML = html;
+    
+    for (const coin of coins) {
+      const collapseBtn = document.getElementById(`collapseBtn${coin.market_cap_rank}`);
+      collapseBtn.addEventListener("click", async function() {
+
+        const button = this;
+        const coinName = button.getAttribute("data-coin-name");
+        const collapseContent = $(`#collapseId${coin.market_cap_rank}`);
+
+        const spinner = document.getElementById(`spinnerId${coin.market_cap_rank}`); // loading spinner
+        spinner.style.display = "inline-block"; // shows the loading spinner
+
+        const isHidden = !collapseContent.hasClass("show");
+        collapseContent.collapse("toggle");
+
+        const savedSessionStorageMoreInfo = sessionStorage.getItem(coinName);
+        let moreInfoCoinData;
+
+        if (isHidden) {
+
+          if (savedSessionStorageMoreInfo) {
+
+            moreInfoCoinData = JSON.parse(savedSessionStorageMoreInfo);
+            const currentTime = new Date().getTime();
+            
+            if (currentTime > moreInfoCoinData.expDate) { // if the saved data is older than 2 minutes
+
+              moreInfoCoinData = await getJson(`https://api.coingecko.com/api/v3/coins/${coinName}`); // new api call
+              moreInfoCoinData.expDate = new Date().setMinutes(new Date().getMinutes() + 2); // adding expDate
+              sessionStorage.setItem(coinName, JSON.stringify(moreInfoCoinData)); // updating session storage
+
+            }
+          
+            if (moreInfoCoinData) {
+            
+            $(`#collapseId${coin.market_cap_rank}`).html(`
+                  ILS = ₪${moreInfoCoinData.market_data.current_price.ils}
+                    <br>
+                  USD = $${moreInfoCoinData.market_data.current_price.usd}
+                    <br>
+                  EUR = €${moreInfoCoinData.market_data.current_price.eur}
+                `);
+            }
+          }
+
+          else {
+
+            moreInfoCoinData = await getJson(`https://api.coingecko.com/api/v3/coins/${coinName}`);
+            moreInfoCoinData.expDate = new Date().setMinutes(new Date().getMinutes() + 2);
+
+            $(`#collapseId${moreInfoCoinData.market_cap_rank}`).html(
+                `
+                  ILS = ₪${moreInfoCoinData.market_data.current_price.ils}
+                    <br>
+                  USD = $${moreInfoCoinData.market_data.current_price.usd}
+                    <br>
+                  EUR = €${moreInfoCoinData.market_data.current_price.eur}
+                `
+            )
+
+            sessionStorage.setItem(coinName, JSON.stringify(moreInfoCoinData));
+         }
+        }
+
+        spinner.style.display = "none"; // hides the loading spinner when done.
+      });
+      
+    }
 
     let checkedCoins = getFromSessionStorageCheckedCoins() || []; // array of all the checked coins (default to an empty array if not found)
     let coinsList = $("#coinsList"); // div where all the checked coins will be displayed
@@ -339,9 +410,6 @@ function toggleDataSeries(e) {
         coinsList.html("<span>Coins Selected:</span> " + checkedCoins.join(" / ")); 
       }
     }
-
-    // after being in currencies page you can access the More Info button here
-    $(".more-info-button").on("click", displayMoreInfo); // every more info button. when clicked it calls displayMoreInfo
 
   }
 
@@ -407,102 +475,6 @@ function toggleDataSeries(e) {
     }
       
   }
-
-  function saveToSessionStorageMoreInfo(coin) { // saving the MORE INFO - ILS USD EUR api to session storage
-
-    const date = new Date().setMinutes(new Date().getMinutes() + 2); // 2 minutes from current time
-
-    sessionStorage.setItem("moreInfoSavedCoins", JSON.stringify({
-      coin,
-      expDate: date
-    }));
-  }
-  
-  // when pressing the More Info button it adds the data (collapse + -)
-  async function displayMoreInfo() {
-
-    event.preventDefault(); // prevents scrolling up after button click.
-
-    const button = this;
-    const coinId = button.getAttribute("data-coin-id");
-    const coinName = button.getAttribute("data-coin-name");
-            
-
-    const spinner = document.getElementById(`spinnerId${coinId}`); // loading spinner
-    spinner.style.display = "inline-block"; // shows the loading spinner
-
-    const storedMoreInfoData = sessionStorage.getItem("moreInfoSavedCoins"); // getting the stored data of the more info api
-    let coin;
-
-    const moreInfoContent = document.getElementById(`moreInfoContent-${coinId}`);
-    moreInfoContent.classList.toggle("show");
-
-    if (storedMoreInfoData) { // if there's already data it prevents api call multiple times.
-
-      const res = (new Date()).getTime() > JSON.parse(storedMoreInfoData).expDate;
-
-      if (res) { // if the stored more info data is older than 2 minutes = NEW API CALL
-        sessionStorage.removeItem("moreInfoSavedCoins");
-        coin = await getJson(`https://api.coingecko.com/api/v3/coins/${coinName}`);
-        saveToSessionStorage(coin);
-      }
-
-      coin = JSON.parse(storedMoreInfoData).coin;
-
-      if (moreInfoContent.classList.contains("show")) { // shows the info in ILS / USD / EUR
-
-        moreInfoContent.innerHTML =
-          `
-          ILS = ₪${coin.market_data.current_price.ils}
-            <br>
-          USD = $${coin.market_data.current_price.usd}
-            <br>
-          EUR = €${coin.market_data.current_price.eur}
-          `;
-          
-          button.textContent = "More Info -";
-      }
-  
-      else {
-  
-        moreInfoContent.innerHTML = "";
-        button.textContent = "More Info +";
-  
-      }
-    }
-
-    else {
-      
-      // coin takes the specific coin that the user pressed more info on
-      coin = await getJson(`https://api.coingecko.com/api/v3/coins/${coinName}`); // api call to get the ILS USD EUR value
-
-      if (moreInfoContent.classList.contains("show")) { // shows the info in ILS / USD / EUR
-
-        moreInfoContent.innerHTML =
-          `
-          ILS = ₪${coin.market_data.current_price.ils}
-            <br>
-          USD = $${coin.market_data.current_price.usd}
-            <br>
-          EUR = €${coin.market_data.current_price.eur}
-          `;
-        
-        button.textContent = "More Info -";
-      }
-
-      else {
-
-        moreInfoContent.innerHTML = "";
-        button.textContent = "More Info +";
-
-      }
-
-      saveToSessionStorageMoreInfo(coin); // saving the data from the api.
-    }
-
-    spinner.style.display = "none"; // hides the loading spinner when done.
-
-  };
 
   // search input top right - searching by coin name or coin symbol
   const searchForm = document.getElementById("searchForm");
