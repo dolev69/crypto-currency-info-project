@@ -208,7 +208,7 @@ function toggleDataSeries(e) {
 
             <div class="social-media">
 
-              <a href="https://github.com/dolev69" target="_blank"><i class='bx bxl-github' ></i></a>
+              <a href="https://github.com/zdolevm" target="_blank"><i class='bx bxl-github' ></i></a>
 
             </div>
 
